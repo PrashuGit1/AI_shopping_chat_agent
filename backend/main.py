@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from backend.nlu import parse_intent
-from backend.recommender import query_phones, compare_models
-from backend.safety import check_user_message
+from nlu import parse_intent
+from recommender import query_phones, compare_models
+from safety import check_user_message
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="../frontend"), name="static")
