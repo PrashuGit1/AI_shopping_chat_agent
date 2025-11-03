@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Phone Shop Chat</title>
+  <style>
+    body{font-family:sans-serif;margin:20px}
+    #chat{max-width:800px}
+    .msg{padding:8px;margin:6px;border-radius:8px}
+    .user{background:#e6f7ff;text-align:right}
+    .bot{background:#f0f0f0}
+    .card{border:1px solid #ddd;padding:8px;margin:6px;border-radius:8px}
+    .cards{display:flex;gap:8px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <h2>Phone Shop Chat</h2>
+  <div id="chat"></div>
+  <div style="margin-top:12px">
+    <input id="inp" style="width:60%" placeholder="Ask: Best camera phone under ₹30k?">
+    <button id="send">Send</button>
+    <button id="compare">Compare</button>
+  </div>
+
+<script>
+async function send(msg, mode='recommend', compare_models=null){
+  const res = await fetch('/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({message: msg, mode, compare_models})
+  });
+  const data = await res.json();
+  return data;
+}
+
+function addMsg(text, cls='bot'){
+  const d = document.createElement('div'); d.className='msg '+cls; d.innerText=text; document.getElementById('chat').appendChild(d);
+}
+
+function renderItems(items){
+  const wrapper = document.createElement('div'); wrapper.className='cards';
+  items.forEach(it=>{
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `<strong>${it.brand} ${it.model}</strong><div>₹${it.price}</div>` +
+                  `<div>Camera: ${it.camera_mp ?? 'N/A'} MP</div><div>Battery: ${it.battery_mah ?? 'N/A'} mAh</div>` +
+                  `<div>RAM: ${it.ram_gb ?? 'N/A'} GB | Storage: ${it.storage_gb ?? 'N/A'} GB</div>`;
+    wrapper.appendChild(c);
+  });
+  document.getElementById('chat').appendChild(wrapper);
+}
+
+document.getElementById('send').onclick = async ()=>{
+  const v = document.getElementById('inp').value;
+  addMsg(v,'user');
+  const r = await send(v);
+  if(r.error){ addMsg(r.error + (r.reason ? ' — '+r.reason : ''),'bot'); return }
+  if(r.type === 'recommendation'){
+    addMsg('Here are suggestions:','bot');
+    renderItems(r.items);
+  } else if(r.type === 'comparison'){
+    addMsg('Comparison results:','bot');
+    renderItems(r.items);
+  }
+}
+
+document.getElementById('compare').onclick = async ()=>{
+  // crude: expect user to type "compare: model1, model2"
+  const v = document.getElementById('inp').value;
+  const parts = v.split(':');
+  if(parts.length<2){ addMsg('Type: compare: Model A, Model B','bot'); return }
+  const models = parts[1].split(',').map(s=>s.trim());
+  addMsg('Compare ' + models.join(' vs '),'user');
+  const r = await send(v,'compare', models);
+  if(r.error){ addMsg(r.error+' — '+(r.reason||''),'bot'); return }
+  addMsg('Comparison:','bot'); renderItems(r.items);
+}
+</script>
+</body>
+</html>
