@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 import sqlite3
-import re
 from typing import List, Optional, Dict
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
